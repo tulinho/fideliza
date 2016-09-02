@@ -369,11 +369,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   
   
   /*  begin:HOME PAGE  */
-  
-  app.onRedeemReward = function(){
-    console.log('app');
-  };
-  
+    
   var _configUserCardsListener = function(){    
     var cardsRef = firebase.database().ref('cards/' + firebase.auth().currentUser.uid);
     cardsRef.on('child_added', function(data) {
@@ -392,13 +388,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   var _addCardElementToList = function(cardKey, promoCard){    
     firebase.database().ref('promos/' + cardKey).once('value')
     .then(_validatePromoCardPromise)
-    .then(function(currPromo){
+    .then(function(promoSnap){
+      var currPromo = promoSnap.val();
       return firebase.database().ref('stores/' + currPromo.store).once('value')
         .then(function(storeSnap){
           var currStore = storeSnap.val();
           app.userPromoCards.push({
             uid: cardKey,
-            promo: firebase.auth().currentUser.uid,
+            user: firebase.auth().currentUser.uid,
+            promo: promoSnap.key,
             store: storeSnap.key,
             promoDescription: currPromo.description,
             storeName: currStore.name,
@@ -410,6 +408,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           });
         });
     })
+    .then(_getRewardRequestsPromise)
     .then(_buildUserPromoCards);  
   };
   
@@ -417,15 +416,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     return new Promise(function(resolve, reject){
       var currPromo = promoSnap.val();
       if(currPromo.isActive && currPromo.expirationDate > Date.now()){
-        resolve(currPromo);
+        resolve(promoSnap);
       }
       else{
-        reject(currPromo);
+        reject(promoSnap);
       }
     });
   };
   
-  var _buildUserPromoCards = function(){
+  var _getRewardRequestsPromise = function(){
+    return firebase.database()
+      .ref('rewards')
+      .orderByChild('user')
+      .equalTo(firebase.auth().currentUser.uid)
+      .once('value');
+  };
+  
+  var _buildUserPromoCards = function(rewardsSnap){
+    var rewardRequests = [];
+    rewardsSnap.forEach(function(rw){ rewardRequests.push(rw.val()); });
     app.$.userCardList.innerHTML = '';
     var cardCount = 1;
     app.userPromoCards.forEach(function(elem){
@@ -441,10 +450,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       card.$.phone.textContent = elem.phone;
       
       var completedCards = Math.floor(elem.numUserCodes/elem.completeAt);
-      card.$.numUserCodes = (elem.numUserCodes % elem.completeAt) + '/' + elem.completeAt + 
+      card.$.numUserCodes.textContent = (elem.numUserCodes % elem.completeAt) + '/' + elem.completeAt + 
         (completedCards > 0 ? (' - ' + completedCards + (completedCards == 1 ? ' completo' : ' completos')) : '');
       
-      if(completedCards > 0){
+      var hasRewardRequest = rewardRequests.filter(function(request){ return request.promo == elem.promo; }).length > 0;
+      if(completedCards > 0 && !hasRewardRequest){
         card.$.redeemReward.style.visibility = 'visible'
       }
       else{
@@ -452,7 +462,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
       
       card.$.completeAt.innerHTML = '';
+      var codesCounter = 0;
       elem.codeList.forEach(function(promoCode){
+        if(codesCounter != 0 && (codesCounter % elem.completeAt) == 0){
+          card.$.completeAt.appendChild(document.createElement('br'));
+        }
+        codesCounter++;
         var child = document.createElement('iron-icon');
         child.setAttribute('icon', promoCode ? 'icons:star':'icons:star-border');
         if(promoCode){ child.style.color = '#FFAB00'; }
@@ -465,7 +480,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   };
   
   var _addPropertiesAndEventsToPromoCard = function(uiCard, dbCard){
-    uiCard.onRedeemReward = function(){ console.log(uiCard.id); };
+    uiCard.onRedeemReward = function(){ 
+      firebase.database().ref('rewards/' + dbCard.store)
+      .set({
+        user: dbCard.user,
+        promo: dbCard.promo
+      })
+      .then(function(){ _requestRedeemRewardSuccess(uiCard); });
+    };
+  };
+  
+  var _requestRedeemRewardSuccess = function(uiCard){
+    _showInformationToast('Sua solicitação foi realizada, aguarde a resposta do estabelecimento!', 'toast-success');
+    uiCard.$.redeemReward.style.visibility = 'hidden';     
   };
   
   var _getCodeList = function(completeAt, ownedCodes){
