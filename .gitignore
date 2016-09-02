@@ -1,0 +1,12 @@
+node_modules
+dist
+bower_components
+.tmp
+.dist
+.editorconfig
+.travis.yml
+scripts_config.js
+*.md
+*.log
+*.sh
+.publish/
