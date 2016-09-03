@@ -61,10 +61,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   
   
   <script src="https://www.gstatic.com/firebasejs/live/3.0/firebase.js"></script>
-  <script>
-    // Initialize Firebase
+  <!-- 
     var config = {
-    };
+      apiKey: "XXXXXXXXXXXXXXXXXXXXXXX",
+      authDomain: "XXXXXXXXXXXXXXXXXX",
+      databaseURL: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      storageBucket: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    }; 
+  -->
+  <script src="scripts/firebase-config.js"></script>
+  <script>
     firebase.initializeApp(config);
   </script>
 
@@ -89,6 +95,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
           <p id="promoDescription"></p>
           <p class="paper-font-caption"></p>
+          <div><span class="">Validade: </span><span id="expiration"></span></div>
           <div><span class="">Endereço: </span><span id="address"></span></div>
           <div><span>Telefone: </span><span id="phone"></span></div>
           <div><span>Códigos Promocionais: </span><span id="numUserCodes"></span></div>        
