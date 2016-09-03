@@ -6,6 +6,7 @@ bower_components
 .editorconfig
 .travis.yml
 scripts_config.js
+app/scripts/firebase-config.js
 *.md
 *.log
 *.sh
