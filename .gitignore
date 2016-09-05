@@ -1,8 +1,10 @@
 node_modules
 dist
 bower_components
+firebase.json
+.firebaserc
 .tmp
-.dist
+dist
 .editorconfig
 .travis.yml
 scripts_config.js
@@ -11,3 +13,5 @@ app/scripts/firebase-config.js
 *.log
 *.sh
 .publish/
+storeapp/.tmp
+storeapp/app/scripts/firebase-config.js

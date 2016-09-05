@@ -126,15 +126,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <span>Home</span>
           </a>
 
-          <a data-route="promo-codes" href="{{baseUrl}}promo-codes">
+          <a data-route="promo-codes" href="{{baseUrl}}newPromo">
             <iron-icon icon="icons:add-circle-outline"></iron-icon>
-            <span>Código Promocional</span>
+            <span>Criar Promoção</span>
           </a>
 
-          <a data-route="contact" href="{{baseUrl}}contact">
-            <iron-icon icon="mail"></iron-icon>
-            <span>Contact</span>
-          </a>
         </paper-menu>
       </paper-scroll-header-panel>
       <!-- Main Area -->
@@ -240,18 +236,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                   </div>
                   <br/>
                   <br/>
-                  <a class="app-link" href="/forgetPassword">Esqueci minha senha &raquo;</a>
+                  <a class="app-link" href="/forgotPassword">Esqueci minha senha &raquo;</a>
                   <br/>
                   <br/>
                   <br/>
                 </form>
               </paper-material>
-          </section>
-        </neon-animatable>
-
-        <neon-animatable>
-          <section>
-
           </section>
         </neon-animatable>
 
@@ -263,15 +253,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <section class="sign-in-main">
               <paper-material elevation="1">
                 <form is="iron-form" id="signInForm" method="post" action="#">
-                  <h3>Novo Usuário</h3>
-                  <paper-input id="signInName" label="Nome" type="text" required="true"></paper-input>
-                  <paper-input id="signInCPF" 
-                               label="CPF" 
-                               allowedPattern="true" 
-                               pattern="[0-9]{11}|([0-9]{3}\.[0-9]{3}\.[0-9]{3}\-[0-9]{2})"
-                               auto-validate 
-                               required="true"></paper-input>
-                  <paper-input id="signInCel" 
+                  <h3>Novo Estabelecimento</h3>
+                  <paper-input id="signInName" label="Nome" type="text" required="true"></paper-input>                    
+                  <paper-input id="signInAddress" label="Endereço" type="text" required="true"></paper-input>                 
+                  <paper-input id="signInPhone" 
                                label="Celular" 
                                allowedPattern="true" 
                                pattern="[0-9]{10}|[0-9]{11}|(\([0-9]{2}\)([0-9]{4,5})-[0-9]{4})"
