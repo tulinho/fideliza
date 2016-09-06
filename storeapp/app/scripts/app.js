@@ -87,7 +87,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   app.IsUserSignedIn = false;
   app.selected = 0;
-  app.userPromoCards = [];
+  app.storePromos = [];
 
   app.onBackSignIn = function () {
     app.selected = 0;
@@ -109,7 +109,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       if (user) {
         app.IsUserSignedIn = true;
         app.$.loginFluxContainer.style.display = 'none';
-        /*_configUserCardsListener();*/
+        _configHomePageExhibition();
       } else {
         app.IsUserSignedIn = false;
         app.$.loginFluxContainer.style.display = 'block';
@@ -263,7 +263,124 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   /*  begin:HOME PAGE  */
 
+  var _configHomePageExhibition = function () {
+    _getStorePromos();
+  };
+
+  var _getStorePromos = function () {
+    app.$.promoCardList.innerHTML = '';
+    firebase.database().ref('promos')
+      .orderByChild('store')
+      .equalTo(firebase.auth().currentUser.uid)
+      .on('value', function (promoSnapList) {
+        return new Promise(function (resolve, reject) {
+          var promoSnapOrderedList = [];
+          promoSnapList.forEach(function (promoSnap) {
+            promoSnapOrderedList.push(promoSnap);
+          });
+          promoSnapOrderedList.sort(function (obj1, obj2) {
+            return obj1.val().isActive < obj2.val().isActive;
+          });
+
+          _addPendingRewardRequestInformationToPromos(promoSnapOrderedList)
+            .then(_buildPromoCards)
+        });
+      });
+  };
+
+  var _addPendingRewardRequestInformationToPromos = function (promoSnapList) {
+    return new Promise(function (resolve, reject) {
+      var promoList = [];
+      for(var count = 0, len = promoSnapList.length; count < len; count++){
+        var promoSnap = promoSnapList[count];
+        firebase.database().ref('rewards')
+          .orderByChild('promo')
+          .equalTo(promoSnap.key)
+          .once('value')
+          .then(_getPendingRewardRequestList)
+          .then(function (pendingList) {
+            var promo = promoSnap.val();
+            promo.key = promoSnap.key;
+            promo.pending = pendingList.length;
+            promoList.push(promo);
+            if(count >= len){
+              resolve(promoList);
+            }
+          });
+      }
+      /*promoSnapList.forEach(function (promoSnap) {
+        firebase.database().ref('rewards')
+          .orderByChild('promo')
+          .equalTo(promoSnap.key)
+          .once('value')
+          .then(_getPendingRewardRequestList)
+          .then(function (pendingList) {
+            var promo = promoSnap.val();
+            promo.key = promoSnap.key;
+            promo.pending = pendingList.length;
+            promoList.push(promo);
+          });
+      });
+      resolve(promoList);*/
+    });
+  };
+
+  var _getPendingRewardRequestList = function (rewardSnapList) {
+    return new Promise(function (resolve, reject) {
+      var pendingList = [];
+      rewardSnapList.forEach(function (rewardSnap) {
+        if (!('approved' in rewardSnap.val())) {
+          pendingList.push(rewardSnap);
+        }
+      });
+      resolve(pendingList);
+    });
+  };
+
+  var _buildPromoCards = function (promoList) {
+    var cardCount = 1;
+    app.storePromos = [];
+    promoList.forEach(function (elem) {
+      var template = document.querySelector('#storePromoCard').content;
+      var promoCard = document.importNode(template, true);
+      app.$.promoCardList.appendChild(promoCard);
+
+      var card = document.querySelector('#promo');
+      card.setAttribute('id', 'promo' + cardCount++);
+      card.$.promoDescription.textContent = elem.description;
+      card.$.pendingRequests.textContent = elem.pending;
+      card.$.isActive.textContent = elem.isActive && elem.expirationDate > Date.now() ? 'sim' : 'não';
+    });
+  };
+
   /*  end:HOME PAGE  */
+
+
+  /*  begin:ADD PROMO PAGE  */
+
+  app.onSavePromo = function () {
+    if (app.$.editPromoForm.validate()) {
+      var expirationDate = new Date(app.$.editPromoExpirationDate.value + " 23:59:59");
+      if (expirationDate.getTime() <= Date.now()) {
+        _showInformationToast('A data de vigência da promoção deve ser maior que a data atual.', 'toast-error');
+        return;
+      }
+      firebase.database().ref('promos').push({
+        completeAt: app.$.editPromoCompleteAt.value,
+        description: app.$.editPromoDescription.value,
+        expirationDate: expirationDate.getTime(),
+        isActive: app.$.editPromoIsActive.checked,
+        store: firebase.auth().currentUser.uid
+      }).then(_savePromoSuccess);
+    }
+  };
+
+  var _savePromoSuccess = function () {
+    _showInformationToast('Promoção criada com sucesso.', 'toast-success');
+    page('/');
+  };
+
+  /*  end:ADD PROMO PAGE  */
 
 
 })(document);

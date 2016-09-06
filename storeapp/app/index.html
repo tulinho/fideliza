@@ -57,9 +57,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <!-- For shared styles, shared-styles.html import in elements.html -->
   <style is="custom-style" include="shared-styles"></style>
-  
-  
-  
+
   <script src="https://www.gstatic.com/firebasejs/live/3.0/firebase.js"></script>
   <!-- 
     var config = {
@@ -68,7 +66,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       databaseURL: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
       storageBucket: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
     }; 
-  -->  
+  -->
   <!-- build:js scripts/firebase-config.js -->
   <script src="scripts/firebase-config.js"></script>
   <!-- endbuild-->
@@ -80,35 +78,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <body unresolved>
   <span id="browser-sync-binding"></span>
-  <template id="userPromoCards">    
-    <template is="dom-bind" id="promoCard">
+  <template id="storePromoCard">
+    <template is="dom-bind" id="promo">
       <div class="promo-card">
         <paper-material elevation="1">
           <paper-toolbar>
-            <h3 id="storeName"></h3>
             <div class="space"></div>
-            <paper-menu-button horizontal-align="right" vertical-align="top" id="redeemReward">
+            <paper-menu-button horizontal-align="right" vertical-align="top" id="promoOptions">
               <paper-icon-button icon="icons:more-vert" class="dropdown-trigger"></paper-icon-button>
               <paper-menu class="dropdown-content">
-                <paper-item on-click="onRedeemReward">Utilizar</paper-item>
+                <paper-item on-click="onGenerateCode">Gerar código</paper-item>
+                <paper-item on-click="onEditPromo">Editar</paper-item>
               </paper-menu>
             </paper-menu-button>
           </paper-toolbar>
-
           <p id="promoDescription"></p>
           <p class="paper-font-caption"></p>
-          <div><span class="">Validade: </span><span id="expiration"></span></div>
-          <div><span class="">Endereço: </span><span id="address"></span></div>
-          <div><span>Telefone: </span><span id="phone"></span></div>
-          <div><span>Códigos Promocionais: </span><span id="numUserCodes"></span></div>        
-          <p class="paper-font-caption">
-            <span id="completeAt"></span>
-          </p>
+          <div><span class="">Solicitações pendentes: </span><span id="pendingRequests"></span></div>
+          <div><span class="">Ativa: </span><span id="isActive"></span></div>
         </paper-material>
       </div>
     </template>
   </template>
-  
+
   <template is="dom-bind" id="app">
     <paper-drawer-panel id="paperDrawerPanel">
       <!-- Drawer Scroll Header Panel -->
@@ -126,7 +118,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <span>Home</span>
           </a>
 
-          <a data-route="promo-codes" href="{{baseUrl}}newPromo">
+          <a data-route="promo-codes" href="{{baseUrl}}editPromo">
             <iron-icon icon="icons:add-circle-outline"></iron-icon>
             <span>Criar Promoção</span>
           </a>
@@ -163,27 +155,31 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <!-- Main Content -->
         <div class="content">
           <iron-pages attr-for-selected="data-route" selected="{{route}}">
-            <section data-route="home">              
-              <section id="userCardList"></section>
+            <section data-route="home">
+              <section id="promoCardList"></section>
             </section>
 
-            <section data-route="promo-codes">
+            <section data-route="edit-promo">
               <paper-material elevation="1">
-                <h2 class="page-title"><iron-icon icon="icons:add-circle-outline"></iron-icon> Adicionar Código</h2>
+                <h3 class="page-title"><iron-icon icon="icons:add-circle-outline"></iron-icon> Cadastro de Promoção</h2>
                 <p></p>
-                <form is="iron-form" id="addPromoCodeForm" method="post" action="#">
-                  <paper-input id="promoCodesInput" 
-                                 label="Código Promocional" 
-                                 allowedPattern="true" 
-                                 pattern="[a-zA-Z]{3}[0-9]{4}"
-                                 auto-validate 
-                                 autocapitalize
-                                 required="true"></paper-input>
+                <form is="iron-form" id="editPromoForm" method="post" action="#">
+                  <paper-input id="editPromoDescription" label="Descrição" required="true"></paper-input>
+                  <paper-input is="iron-input" 
+                    id="editPromoCompleteAt" 
+                    label="Quantidade de códigos"
+                    required                                           
+                    prevent-invalid-input                       
+                    allowed-pattern="[0-9]"></paper-input>
+                    <paper-input id="editPromoExpirationDate" type="date" label="Validade da promoção" class="datepicker" required label-visible="false"></paper-input>
+                    <br/>
+                    <paper-checkbox id="editPromoIsActive" checked> Promoção ativa</paper-checkbox>
+                  <br/>
                   <br/>
                   <br/>
                   <div class="login-buttons">
-                    <paper-button class="pallete-primary-color-700" raised noink on-click="onAddPromoCode">
-                      Adicionar código
+                    <paper-button class="pallete-primary-color-700" raised noink on-click="onSavePromo">
+                      Salvar
                       <paper-ripple></paper-ripple>
                     </paper-button>
                   </div>
@@ -220,105 +216,97 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               <paper-material elevation="1">
                 <form is="iron-form" id="loginForm" method="post" action="#">
                   <h3>Login</h3>
-                  <gold-email-input id="loginEmail" label="Email"></gold-email-input>
-                  <paper-input id="loginPassword" label="Senha" type="password"></paper-input>
-                  <br/>
-                  <br/>
-                  <div class="login-buttons">
-                    <paper-button class="pallete-primary-color-700" raised noink on-click="onLogin">
-                      Fazer login
-                      <paper-ripple></paper-ripple>
-                    </paper-button>
-                    <paper-button class="pallete-primary-color-700" raised noink on-click="onSignIn">
-                      Criar conta
-                      <paper-ripple></paper-ripple>
-                    </paper-button>
-                  </div>
-                  <br/>
-                  <br/>
-                  <a class="app-link" href="/forgotPassword">Esqueci minha senha &raquo;</a>
-                  <br/>
-                  <br/>
-                  <br/>
+                <gold-email-input id="loginEmail" label="Email"></gold-email-input>
+                <paper-input id="loginPassword" label="Senha" type="password"></paper-input>
+                <br/>
+                <br/>
+                <div class="login-buttons">
+                  <paper-button class="pallete-primary-color-700" raised noink on-click="onLogin">
+                    Fazer login
+                    <paper-ripple></paper-ripple>
+                  </paper-button>
+                  <paper-button class="pallete-primary-color-700" raised noink on-click="onSignIn">
+                    Criar conta
+                    <paper-ripple></paper-ripple>
+                  </paper-button>
+                </div>
+                <br/>
+                <br/>
+                <a class="app-link" href="/forgotPassword">Esqueci minha senha &raquo;</a>
+                <br/>
+                <br/>
+                <br/>
                 </form>
               </paper-material>
-          </section>
-        </neon-animatable>
+            </section>
+            </neon-animatable>
 
-        <neon-animatable>
-            <paper-toolbar class="flex pallete-primary-color-500">
-              <paper-icon-button icon="icons:arrow-back" on-click="onBackSignIn"></paper-icon-button>
-              <h3>CRIAR CONTA</h3>
-            </paper-toolbar>
-            <section class="sign-in-main">
-              <paper-material elevation="1">
-                <form is="iron-form" id="signInForm" method="post" action="#">
-                  <h3>Novo Estabelecimento</h3>
-                  <paper-input id="signInName" label="Nome" type="text" required="true"></paper-input>                    
-                  <paper-input id="signInAddress" label="Endereço" type="text" required="true"></paper-input>                 
-                  <paper-input id="signInPhone" 
-                               label="Celular" 
-                               allowedPattern="true" 
-                               pattern="[0-9]{10}|[0-9]{11}|(\([0-9]{2}\)([0-9]{4,5})-[0-9]{4})"
-                               auto-validate 
-                               error-message="Formatos válidos: (XX)XXXX-XXXX ou (XX)XXXXX-XXXX"
-                               required="true"></paper-input>
-                  <gold-email-input id="signInEmail" label="Email" required="true"></gold-email-input>
-                  <paper-input id="signInPassword" label="Senha" type="password" required="true"></paper-input>
-                  <br/>
-                  <br/>
-                  <div class="login-buttons">
-                    <paper-button class="pallete-primary-color-700" raised noink on-click="onCreateAccount">
-                      Criar conta
-                      <paper-ripple></paper-ripple>
-                    </paper-button>
-                  </div>
-                  <br/>
-                  <br/>
-                  <br/>
-                </form>
-              </paper-material>
-          </section>
-        </neon-animatable>
+            <neon-animatable>
+              <paper-toolbar class="flex pallete-primary-color-500">
+                <paper-icon-button icon="icons:arrow-back" on-click="onBackSignIn"></paper-icon-button>
+                <h3>CRIAR CONTA</h3>
+              </paper-toolbar>
+              <section class="sign-in-main">
+                <paper-material elevation="1">
+                  <form is="iron-form" id="signInForm" method="post" action="#">
+                    <h3>Novo Estabelecimento</h3>
+                    <paper-input id="signInName" label="Nome" type="text" required="true"></paper-input>
+                    <paper-input id="signInAddress" label="Endereço" type="text" required="true"></paper-input>
+                    <paper-input id="signInPhone" label="Celular" allowedPattern="true" pattern="[0-9]{10}|[0-9]{11}|(\([0-9]{2}\)([0-9]{4,5})-[0-9]{4})" auto-validate error-message="Formatos válidos: (XX)XXXX-XXXX ou (XX)XXXXX-XXXX" required="true"></paper-input>
+                    <gold-email-input id="signInEmail" label="Email" required="true"></gold-email-input>
+                    <paper-input id="signInPassword" label="Senha" type="password" required="true"></paper-input>
+                    <br/>
+                    <br/>
+                    <div class="login-buttons">
+                      <paper-button class="pallete-primary-color-700" raised noink on-click="onCreateAccount">
+                        Criar conta
+                        <paper-ripple></paper-ripple>
+                      </paper-button>
+                    </div>
+                    <br/>
+                    <br/>
+                    <br/>
+                  </form>
+                </paper-material>
+              </section>
+            </neon-animatable>
 
-        <neon-animatable>
-          <paper-toolbar class="flex pallete-primary-color-500">
-            <paper-icon-button icon="icons:arrow-back" on-click="onBackSignIn"></paper-icon-button>
-            <h3>ESQUECI MINHA SENHA</h3>
-          </paper-toolbar>
-          <section class="sign-in-main">
-              <paper-material elevation="1">
-                <form is="iron-form" id="forgetPasswordForm" method="post" action="#">
-                  <h3>Redefinição de senha</h3>
-                  <p style="text-align: justify;">Esqueceu sua senha? Não tem problema, basta nos informar o seu e-mail para que em alguns instantes lhe enviemos as instruções para redefinir sua senha.</p>
-                  <gold-email-input id="forgotPasswordEmail" label="Email" required="true"></gold-email-input>
-                  <br/>
-                  <br/>
-                  <div class="login-buttons">
-                    <paper-button class="pallete-primary-color-700" raised noink on-click="onRedefinePassword">
-                      Quero alterar minha senha
-                      <paper-ripple></paper-ripple>
-                    </paper-button>
-                  </div>
-                  <br/>
-                  <br/>
-                  <br/>
-                </form>
-            </paper-material>
-          </section>
-        </neon-animatable>
+            <neon-animatable>
+              <paper-toolbar class="flex pallete-primary-color-500">
+                <paper-icon-button icon="icons:arrow-back" on-click="onBackSignIn"></paper-icon-button>
+                <h3>ESQUECI MINHA SENHA</h3>
+              </paper-toolbar>
+              <section class="sign-in-main">
+                <paper-material elevation="1">
+                  <form is="iron-form" id="forgetPasswordForm" method="post" action="#">
+                    <h3>Redefinição de senha</h3>
+                    <p style="text-align: justify;">Esqueceu sua senha? Não tem problema, basta nos informar o seu e-mail para que em alguns instantes lhe enviemos as instruções para redefinir sua senha.</p>
+                    <gold-email-input id="forgotPasswordEmail" label="Email" required="true"></gold-email-input>
+                    <br/>
+                    <br/>
+                    <div class="login-buttons">
+                      <paper-button class="pallete-primary-color-700" raised noink on-click="onRedefinePassword">
+                        Quero alterar minha senha
+                        <paper-ripple></paper-ripple>
+                      </paper-button>
+                    </div>
+                    <br/>
+                    <br/>
+                    <br/>
+                  </form>
+                </paper-material>
+              </section>
+            </neon-animatable>
 
-      </neon-animated-pages>
-    </paper-scroll-header-panel>
+            </neon-animated-pages>
+      </paper-scroll-header-panel>
 
-    <paper-toast id="toast" 
-                 class="fit-bottom"
-                 duration="5000">
-      <span class="toast-hide-button" role="button" tabindex="0" onclick="app.$.toast.hide()">Ok</span>
-    </paper-toast>
+      <paper-toast id="toast" class="fit-bottom" duration="5000">
+        <span class="toast-hide-button" role="button" tabindex="0" onclick="app.$.toast.hide()">Ok</span>
+      </paper-toast>
 
-    <!-- Uncomment next block to enable Service Worker support (1/2) -->
-    <!--
+      <!-- Uncomment next block to enable Service Worker support (1/2) -->
+      <!--
     <paper-toast id="caching-complete"
                  duration="6000"
                  text="Caching complete! This app will work offline.">
