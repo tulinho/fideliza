@@ -157,6 +157,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <iron-pages attr-for-selected="data-route" selected="{{route}}">
             <section data-route="home">
               <section id="promoCardList"></section>
+              <paper-dialog id="newCodeDialog" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+                <h2>Código</h2>
+                <paper-dialog-scrollable>
+                  <div class="center new-code-dialog">
+                    <h1 id="newCodeDialogContent"></h1>
+                  </div>
+                </paper-dialog-scrollable>
+                <div class="buttons">
+                  <paper-button dialog-dismiss>OK</paper-button>
+                </div>
+              </paper-dialog>
             </section>
 
             <section data-route="edit-promo">

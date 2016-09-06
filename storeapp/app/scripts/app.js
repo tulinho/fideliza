@@ -311,7 +311,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           return elem1.isActive < elem2.isActive;
         });
         resolve(promoList);
-      });      
+      });
     });
   };
 
@@ -338,10 +338,29 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       var card = document.querySelector('#promo');
       card.setAttribute('id', 'promo' + cardCount++);
+      card.setAttribute('data-promo', elem.key);
       card.$.promoDescription.textContent = elem.description;
       card.$.pendingRequests.textContent = elem.pending;
       card.$.isActive.textContent = elem.isActive && elem.expirationDate > Date.now() ? 'sim' : 'não';
+      _createCardEvents(card);
     });
+  };
+
+  var _createCardEvents = function (card) {
+    card.onGenerateCode = function () {
+      var generatedCode = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 3).toUpperCase() + (Math.random() * 10000 + "").substr(0, 4);
+      var promoCode = {
+        code: generatedCode,
+        expirationPeriod: 600,
+        promo: card.getAttribute('data-promo'),
+        timestamp: Date.now()
+      };
+      firebase.database().ref('promoCodes').push(promoCode)
+        .then(function () {
+          app.$.newCodeDialogContent.textContent = generatedCode;
+          app.$.newCodeDialog.open();
+        });
+    };
   };
 
   /*  end:HOME PAGE  */
@@ -369,7 +388,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   var _savePromoSuccess = function () {
     _showInformationToast('Promoção criada com sucesso.', 'toast-success');
     app.$.editPromoCompleteAt.value = '';
-    app.$.editPromoDescription.value = ''  
+    app.$.editPromoDescription.value = ''
     app.$.editPromoExpirationDate.value = ''
     app.$.editPromoIsActive.checked = true;
     page('/');
