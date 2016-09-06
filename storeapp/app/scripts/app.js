@@ -268,7 +268,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   };
 
   var _getStorePromos = function () {
-    app.$.promoCardList.innerHTML = '';
     firebase.database().ref('promos')
       .orderByChild('store')
       .equalTo(firebase.auth().currentUser.uid)
@@ -291,37 +290,28 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   var _addPendingRewardRequestInformationToPromos = function (promoSnapList) {
     return new Promise(function (resolve, reject) {
       var promoList = [];
-      for(var count = 0, len = promoSnapList.length; count < len; count++){
-        var promoSnap = promoSnapList[count];
-        firebase.database().ref('rewards')
-          .orderByChild('promo')
-          .equalTo(promoSnap.key)
-          .once('value')
-          .then(_getPendingRewardRequestList)
-          .then(function (pendingList) {
-            var promo = promoSnap.val();
-            promo.key = promoSnap.key;
-            promo.pending = pendingList.length;
-            promoList.push(promo);
-            if(count >= len){
-              resolve(promoList);
-            }
-          });
-      }
-      /*promoSnapList.forEach(function (promoSnap) {
-        firebase.database().ref('rewards')
-          .orderByChild('promo')
-          .equalTo(promoSnap.key)
-          .once('value')
-          .then(_getPendingRewardRequestList)
-          .then(function (pendingList) {
-            var promo = promoSnap.val();
-            promo.key = promoSnap.key;
-            promo.pending = pendingList.length;
-            promoList.push(promo);
-          });
+      var promises = [];
+      promoSnapList.forEach(function (elem) {
+        promises.push((function (promoSnap) {
+          return firebase.database().ref('rewards')
+            .orderByChild('promo')
+            .equalTo(promoSnap.key)
+            .once('value')
+            .then(_getPendingRewardRequestList)
+            .then(function (pendingList) {
+              var promo = promoSnap.val();
+              promo.key = promoSnap.key;
+              promo.pending = pendingList.length;
+              promoList.push(promo);
+            });
+        })(elem));
       });
-      resolve(promoList);*/
+      Promise.all(promises).then(function () {
+        promoList.sort(function (elem1, elem2) {
+          return elem1.isActive < elem2.isActive;
+        });
+        resolve(promoList);
+      });      
     });
   };
 
@@ -338,6 +328,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   };
 
   var _buildPromoCards = function (promoList) {
+    app.$.promoCardList.innerHTML = '';
     var cardCount = 1;
     app.storePromos = [];
     promoList.forEach(function (elem) {
@@ -377,6 +368,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   var _savePromoSuccess = function () {
     _showInformationToast('Promoção criada com sucesso.', 'toast-success');
+    app.$.editPromoCompleteAt.value = '';
+    app.$.editPromoDescription.value = ''  
+    app.$.editPromoExpirationDate.value = ''
+    app.$.editPromoIsActive.checked = true;
     page('/');
   };
 
