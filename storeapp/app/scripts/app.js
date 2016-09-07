@@ -101,6 +101,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   app.configElementsBehavior = function () {
     _configAuthenticationObserver();
     _configNeonAnimatablePagesTransitions();
+    _configDatePicherLocalization();
   };
 
 
@@ -110,6 +111,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         app.IsUserSignedIn = true;
         app.$.loginFluxContainer.style.display = 'none';
         _configHomePageExhibition();
+        _configRewardRequestsObserver();
       } else {
         app.IsUserSignedIn = false;
         app.$.loginFluxContainer.style.display = 'block';
@@ -141,6 +143,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     }
   };
 
+  var _configDatePicherLocalization = function () {
+    moment.locale('pt-br');
+    app.$.editPromoExpirationDate.i18n = {
+      monthNames: moment.months(),
+      weekdaysShort: moment.weekdaysShort(),
+      firstDayOfWeek: moment.localeData().firstDayOfWeek(),
+      today: 'Hoje',
+      cancel: 'Cancelar',
+      formatDate: function (d) {
+        return moment(d).format(moment.localeData().longDateFormat('L'));
+      },
+      formatTitle: function (monthName, fullYear) {
+        return monthName + ' ' + fullYear;
+      }
+    };
+  };
+
+  var _configRewardRequestsObserver = function () {
+    firebase.database().ref('rewards')
+      .orderByChild('store')
+      .equalTo(firebase.auth().currentUser.uid)
+      .on('value', function (data) {
+        data.forEach(function (reward) {
+          if ('approved' in reward.val()) {
+            firebase.database().ref('rewards/' + reward.key).remove();
+          } else {
+            _showApproveRewardModal(reward.key, reward.val());
+          }
+        });
+      });
+  };
+
   var _showInformationToast = (function () {
     var _lastAddedClass = '';
     return function (message, customToastClass, duration) {
@@ -160,6 +194,50 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   })();
 
   /*  end:GLOBAL DECLARATIONS  */
+
+
+  /*  begin:APPROVE REWARD MODAL  */
+
+  var _showApproveRewardModal = function (rewardKey, reward) {
+    firebase.database().ref('users/' + reward.user)
+      .once('value')
+      .then(function (userSnap) {
+        app.$.approveRewardDialogContent.textContent = userSnap.val().name;
+        app.$.rewardToApprove.value = rewardKey;
+        app.$.approveRewardDialog.open();
+      });
+  };
+
+  app.onApproveReward = function () {
+    var rewardRequestRef = firebase.database().ref('rewards/' + app.$.rewardToApprove.value);
+    rewardRequestRef.once('value').then(function (rewardRequestSnap) {
+      var cardRef = firebase.database().ref('cards/' + rewardRequestSnap.val().user + '/' + rewardRequestSnap.val().promo);
+      var promoRef = firebase.database().ref('promos/' + rewardRequestSnap.val().store + '/users' + rewardRequestSnap.val().user);
+
+      firebase.database().ref('promos/' + rewardRequestSnap.val().promo)
+        .once('value')
+        .then(function (promoSnap) {
+          cardRef.transaction(function (amount) {
+            return amount - promoSnap.val().completeAt;
+          });
+          promoRef.transaction(function (amount) {
+            return amount - promoSnap.val().completeAt;
+          });
+          rewardRequestRef.update({
+            approved: true
+          });
+        });
+    });
+  };
+
+  app.onDisapproveReward = function () {
+    var rewardRequest = firebase.database().ref('rewards/' + app.$.rewardToApprove.value);
+    rewardRequest.update({
+      approved: false
+    });
+  };
+
+  /*  end:APPROVE REWARD MODAL */
 
 
   /*  begin:LOGIN PAGE  */
@@ -341,7 +419,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       card.setAttribute('data-promo', elem.key);
       card.$.promoDescription.textContent = elem.description;
       card.$.pendingRequests.textContent = elem.pending;
-      card.$.isActive.textContent = elem.isActive && elem.expirationDate > Date.now() ? 'sim' : 'não';
+      var isActive = elem.isActive && elem.expirationDate > Date.now();
+      card.$.isActive.textContent = isActive ? 'sim' : 'não';
+      if (!isActive) {
+        card.$.generateCode.style.display = 'none';
+      }
       _createCardEvents(card);
     });
   };
@@ -361,12 +443,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           app.$.newCodeDialog.open();
         });
     };
+    card.onEditPromo = function () {
+      page('/editPromo/' + card.getAttribute('data-promo'));
+    };
   };
 
   /*  end:HOME PAGE  */
 
 
   /*  begin:ADD PROMO PAGE  */
+
+  app.onEditPromo = function (key) {
+    _clearEditPromoPage();
+    if (!!key) {
+      firebase.database().ref('promos/' + key).once('value')
+        .then(function (promoSnap) {
+          app.$.editPromoKey.value = promoSnap.key;
+          var promo = promoSnap.val();
+          app.$.editPromoCompleteAt.value = promo.completeAt;
+          app.$.editPromoDescription.value = promo.description;
+          app.$.editPromoExpirationDate.value = (new Date(promo.expirationDate)).toISOString().split('T').shift();
+          app.$.editPromoIsActive.checked = promo.isActive;
+        });
+    }
+  };
 
   app.onSavePromo = function () {
     if (app.$.editPromoForm.validate()) {
@@ -375,23 +475,33 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         _showInformationToast('A data de vigência da promoção deve ser maior que a data atual.', 'toast-error');
         return;
       }
-      firebase.database().ref('promos').push({
+      var promoInfo = {
         completeAt: app.$.editPromoCompleteAt.value,
         description: app.$.editPromoDescription.value,
         expirationDate: expirationDate.getTime(),
         isActive: app.$.editPromoIsActive.checked,
         store: firebase.auth().currentUser.uid
-      }).then(_savePromoSuccess);
+      };
+      if (app.$.editPromoKey.value) {
+        firebase.database().ref('promos/' + app.$.editPromoKey.value).set(promoInfo).then(_savePromoSuccess);
+      } else {
+        firebase.database().ref('promos').push(promoInfo).then(_savePromoSuccess);
+      }
     }
   };
 
   var _savePromoSuccess = function () {
-    _showInformationToast('Promoção criada com sucesso.', 'toast-success');
-    app.$.editPromoCompleteAt.value = '';
-    app.$.editPromoDescription.value = ''
-    app.$.editPromoExpirationDate.value = ''
-    app.$.editPromoIsActive.checked = true;
+    _showInformationToast('Promoção salva com sucesso.', 'toast-success');
+    _clearEditPromoPage();
     page('/');
+  };
+
+  var _clearEditPromoPage = function () {
+    app.$.editPromoKey.value = '';
+    app.$.editPromoCompleteAt.value = '';
+    app.$.editPromoDescription.value = '';
+    app.$.editPromoExpirationDate.value = '';
+    app.$.editPromoIsActive.checked = true;
   };
 
   /*  end:ADD PROMO PAGE  */

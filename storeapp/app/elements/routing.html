@@ -82,6 +82,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     page('/editPromo', function() {
       if(checkAuthState()){
         app.route = 'edit-promo';
+        app.onEditPromo();
+      }
+    });
+
+    page('/editPromo/:key', function(data) {
+      if(checkAuthState()){
+        app.route = 'edit-promo';
+        app.onEditPromo(data.params.key);
       }
     });
 

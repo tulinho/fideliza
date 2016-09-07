@@ -73,7 +73,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script>
     firebase.initializeApp(config);
   </script>
-
 </head>
 
 <body unresolved>
@@ -87,8 +86,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <paper-menu-button horizontal-align="right" vertical-align="top" id="promoOptions">
               <paper-icon-button icon="icons:more-vert" class="dropdown-trigger"></paper-icon-button>
               <paper-menu class="dropdown-content">
-                <paper-item on-click="onGenerateCode">Gerar código</paper-item>
-                <paper-item on-click="onEditPromo">Editar</paper-item>
+                <paper-item id="generateCode" on-click="onGenerateCode">Gerar código</paper-item>
+                <paper-item id="editPromo" on-click="onEditPromo">Editar</paper-item>
               </paper-menu>
             </paper-menu-button>
           </paper-toolbar>
@@ -175,14 +174,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 <h3 class="page-title"><iron-icon icon="icons:add-circle-outline"></iron-icon> Cadastro de Promoção</h2>
                 <p></p>
                 <form is="iron-form" id="editPromoForm" method="post" action="#">
-                  <paper-input id="editPromoDescription" label="Descrição" required="true"></paper-input>
+                 <input type="hidden" id="editPromoKey" value=""/>
+                  <paper-textarea id="editPromoDescription" label="Descrição" max-length="500" required="true"></paper-textarea>
                   <paper-input is="iron-input" 
                     id="editPromoCompleteAt" 
                     label="Quantidade de códigos"
                     required                                           
                     prevent-invalid-input                       
                     allowed-pattern="[0-9]"></paper-input>
-                    <paper-input id="editPromoExpirationDate" type="date" label="Validade da promoção" class="datepicker" required label-visible="false"></paper-input>
+                    <vaadin-date-picker id="editPromoExpirationDate" label="Validade da promoção" required></vaadin-date-picker>
                     <br/>
                     <paper-checkbox id="editPromoIsActive" checked> Promoção ativa</paper-checkbox>
                   <br/>
@@ -200,21 +200,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 <br/>
               </paper-material>
             </section>
-
-            <section data-route="user-info">
-              <paper-material elevation="1">
-                <h2 class="page-title">User: {{params.name}}</h2>
-                <div>This is {{params.name}}'s section</div>
-              </paper-material>
-            </section>
-
-            <section data-route="contact">
-              <paper-material elevation="1">
-                <h2 class="page-title">Contact</h2>
-                <p>This is the contact section</p>
-              </paper-material>
-            </section>
+            
           </iron-pages>
+            
+          <paper-dialog id="approveRewardDialog" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+            <h2>Aprovar Promoção</h2>
+            <paper-dialog-scrollable>
+              <div class="center">
+               <input type="hidden" id="rewardToApprove"/>
+                Olá, seu cliente <span id="approveRewardDialogContent"></span> deseja que você aprove o uso de um cartão promocional.
+              </div>
+            </paper-dialog-scrollable>
+            <div class="buttons">
+              <paper-button dialog-dismiss on-click="onApproveReward">Aprovar</paper-button>
+              <paper-button dialog-dismiss on-click="onDisapproveReward">Negar</paper-button>
+            </div>
+          </paper-dialog>
+            
         </div>
       </paper-scroll-header-panel>
     </paper-drawer-panel>
@@ -335,6 +337,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     -->
 
   </template>
+
+  <!-- build:js scripts/moment.js -->
+  <script src="bower_components/moment/min/moment.min.js"></script>
+  <script src="bower_components/moment/locale/pt-br.js"></script>
+  <!-- endbuild-->
 
   <!-- build:js scripts/app.js -->
   <script src="scripts/app.js"></script>
