@@ -8,7 +8,7 @@ dist
 .editorconfig
 .travis.yml
 scripts_config.js
-app/scripts/firebase-config.js
+customerapp/app/scripts/firebase-config.js
 *.md
 *.log
 *.sh
