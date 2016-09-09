@@ -470,7 +470,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   app.onSavePromo = function () {
     if (app.$.editPromoForm.validate()) {
-      var expirationDate = new Date(app.$.editPromoExpirationDate.value + " 23:59:59");
+      var expirationDate = new Date(app.$.editPromoExpirationDate.value + "T23:59:59");
       if (expirationDate.getTime() <= Date.now()) {
         _showInformationToast('A data de vigência da promoção deve ser maior que a data atual.', 'toast-error');
         return;

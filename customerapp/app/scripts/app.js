@@ -355,7 +355,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     var updates = {};
     var currPromoCode = entities.promoCode.val();
     var currPromo = entities.promo.val();
-    var currUserCards = (entities.userCards.val() || {});
+    var currUserCards = (!!entities.userCards ? entities.userCards.val() : {});
     var userUID = firebase.auth().currentUser.uid;
 
     currPromoCode.user = userUID;
