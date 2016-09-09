@@ -95,7 +95,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   };
 
   app.onSignOut = function () {
-    firebase.auth().signOut();
+    firebase.auth().signOut().then(function () {
+      app.$.promoCardList.innerHTML = '';
+    });
   };
 
   app.configElementsBehavior = function () {
@@ -104,14 +106,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     _configDatePicherLocalization();
   };
 
-
   var _configAuthenticationObserver = function () {
     firebase.auth().onAuthStateChanged(function (user) {
       if (user) {
-        app.IsUserSignedIn = true;
-        app.$.loginFluxContainer.style.display = 'none';
-        _configHomePageExhibition();
-        _configRewardRequestsObserver();
+        firebase.database().ref('stores/' + user.uid).once('value')
+          .then(function (storeSnap) {
+            if (storeSnap.val()) {
+              app.IsUserSignedIn = true;
+              app.route = 'home';
+              app.$.loginFluxContainer.style.display = 'none';
+              _configHomePageExhibition();
+              _configRewardRequestsObserver();
+            } else {
+              app.IsUserSignedIn = false;
+              app.$.loginFluxContainer.style.display = 'block';
+              _showInformationToast('Usuário e senha não conferem.', 'toast-error');
+            }
+          });
       } else {
         app.IsUserSignedIn = false;
         app.$.loginFluxContainer.style.display = 'block';
@@ -430,7 +441,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   var _createCardEvents = function (card) {
     card.onGenerateCode = function () {
-      var generatedCode = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 3).toUpperCase() + (Math.random() * 10000 + "").substr(0, 4);
+      var generatedCode = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 3).toUpperCase() + (Math.random() * 1000000 + "").substr(0, 4);
       var promoCode = {
         code: generatedCode,
         expirationPeriod: 600,

@@ -95,7 +95,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   };
 
   app.onSignOut = function () {
-    firebase.auth().signOut();
+    firebase.auth().signOut().then(function () {
+      app.$.userCardList.innerHTML = '';
+    });
   };
 
   app.configElementsBehavior = function () {
@@ -108,9 +110,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   var _configAuthenticationObserver = function () {
     firebase.auth().onAuthStateChanged(function (user) {
       if (user) {
-        app.IsUserSignedIn = true;
-        app.$.loginFluxContainer.style.display = 'none';
-        _configUserCardsListener();
+        firebase.database().ref('users/' + user.uid).once('value')
+          .then(function (userSnap) {
+            if (userSnap.val()) {
+              app.IsUserSignedIn = true;
+              app.route = 'home';
+              app.$.loginFluxContainer.style.display = 'none';
+              _configUserCardsListener();
+            } else {
+              app.IsUserSignedIn = false;
+              app.$.loginFluxContainer.style.display = 'block';
+              _showInformationToast('Usuário e senha não conferem.', 'toast-error');
+            }
+          });
       } else {
         app.IsUserSignedIn = false;
         app.$.loginFluxContainer.style.display = 'block';
