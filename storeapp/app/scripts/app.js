@@ -282,6 +282,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     }
   };
 
+  app.onSignInPhoneBlur = function(){
+    app.$.signInPhone.value = app.$.signInPhone.value.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1)$2-$3');
+    app.$.signInPhone.value = app.$.signInPhone.value.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1)$2-$3');
+  };
+
   var _createStoreProfile = function (user) {
     user.updateProfile({
         displayName: app.$.signInName.value

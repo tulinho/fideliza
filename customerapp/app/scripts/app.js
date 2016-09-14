@@ -106,7 +106,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     _configAddPromoPageElementsBehavior();
   };
 
-
   var _configAuthenticationObserver = function () {
     firebase.auth().onAuthStateChanged(function (user) {
       if (user) {
@@ -182,8 +181,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   app.onLogin = function () {
     if (app.$.loginForm.validate()) {
+      app.$.loginButton.disabled = true;
       firebase.auth().signInWithEmailAndPassword(app.$.loginEmail.value, app.$.loginPassword.value)
-        .then(function (user) {}, function (error) {
+        .then(function (user) {
+          app.$.loginButton.disabled = false;
+        }, function (error) {
+          app.$.loginButton.disabled = false;
           if (error.code == 'auth/invalid-email') {
             _showInformationToast('O email informado é inválido.', 'toast-error');
           } else {
@@ -204,10 +207,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   app.onCreateAccount = function () {
     if (app.$.signInForm.validate()) {
+      app.$.createAccountButton.disabled = true;
       //TODO: Validar cpf e telefone únicos
       firebase.auth().createUserWithEmailAndPassword(app.$.signInEmail.value, app.$.signInPassword.value)
         .then(_createUserProfile, _createAccountError);
     }
+  };
+  
+  app.onSignInCPFBlur = function(){
+    app.$.signInCPF.value = app.$.signInCPF.value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2}).*/, '$1.$2.$3-$4');
+  };
+  
+  app.onSignInCelBlur = function(){
+    app.$.signInCel.value = app.$.signInCel.value.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1)$2-$3');
+    app.$.signInCel.value = app.$.signInCel.value.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1)$2-$3');
   };
 
   var _createUserProfile = function (user) {
@@ -233,6 +246,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   };
 
   var _createAccountError = function error(error) {
+    app.$.createAccountButton.disabled = false;
     if (error.code == "auth/email-already-in-use") {
       _showInformationToast('Sua conta de usuário não pode ser criada pois o e-mail informado já está sendo utilizado por outro usuário.', 'toast-error');
     } else {
@@ -247,6 +261,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     app.$.signInCel.value = '';
     app.$.signInEmail.value = '';
     app.$.signInPassword.value = '';
+    app.$.createAccountButton.disabled = false;
   };
 
   /*  end:CREATE ACCOUNT PAGE  */
@@ -255,6 +270,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   /*  begin:PASSWORD RECOVERY PAGE  */
 
   app.onRedefinePassword = function () {
+    app.$.redefinePasswordButton.disabled = true;
     firebase.auth().sendPasswordResetEmail(app.$.forgotPasswordEmail.value)
       .then(_sendEmailForPasswordRecoverySuccess, _sendEmailForPasswordRecoveryError);
   };
@@ -262,10 +278,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   var _sendEmailForPasswordRecoverySuccess = function () {
     _showInformationToast('Um email foi enviado para você com instruções para redefinir sua senha.', 'toast-success');
     app.$.forgotPasswordEmail.value = '';
+    app.$.redefinePasswordButton.disabled = false;
     page.redirect('/');
   };
 
   var _sendEmailForPasswordRecoveryError = function (error) {
+    app.$.redefinePasswordButton.disabled = false;
     if (error.code == 'auth/invalid-email') {
       _showInformationToast('O email que você informou não é válido, confira o endereço informado e tente novamente.', 'toast-error');
     }
@@ -281,15 +299,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   app.onAddPromoCode = function () {
     if (app.$.addPromoCodeForm.validate()) {
+      app.$.addPromoCodeButton.disabled = true;
       _getPromoCodeByCodePromise()
         .then(_validateCodePromise)
         .then(_validatePromoPromise)
         .then(_addPromoCodePromise)
         .then(function () {
+          app.$.addPromoCodeButton.disabled = false;
           _showInformationToast('Seu código promocional foi adicionado com sucesso.', 'toast-success');
           app.$.promoCodesInput.value = '';
         })
         .catch(function (error) {
+          app.$.addPromoCodeButton.disabled = false;
           _showInformationToast(error, 'toast-error');
         });
     }
@@ -539,6 +560,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   var _addPropertiesAndEventsToPromoCard = function (uiCard, dbCard) {
     uiCard.onRedeemReward = function () {
+      app.$.redeemRewardItemButton.disabled = true;
       firebase.database().ref('rewards')
         .push({
           store: dbCard.store,
@@ -548,6 +570,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         })
         .then(_redeemReward)
         .then(function () {
+          app.$.redeemRewardItemButton.disabled = false;
           _requestRewardSuccess(uiCard);
         });
     };

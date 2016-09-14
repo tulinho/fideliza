@@ -265,7 +265,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     <h3>Novo Estabelecimento</h3>
                     <paper-input id="signInName" label="Nome" type="text" required="true"></paper-input>
                     <paper-input id="signInAddress" label="Endereço" type="text" required="true"></paper-input>
-                    <paper-input id="signInPhone" label="Celular" allowedPattern="true" pattern="[0-9]{10}|[0-9]{11}|(\([0-9]{2}\)([0-9]{4,5})-[0-9]{4})" auto-validate error-message="Formatos válidos: (XX)XXXX-XXXX ou (XX)XXXXX-XXXX" required="true"></paper-input>
+                    <paper-input id="signInPhone" label="Celular" allowedPattern="true" pattern="[0-9]{10}|[0-9]{11}|(\([0-9]{2}\)([0-9]{4,5})-[0-9]{4})" auto-validate error-message="Formatos válidos: (XX)XXXX-XXXX ou (XX)XXXXX-XXXX" required="true" on-blur="onSignInPhoneBlur"></paper-input>
                     <gold-email-input id="signInEmail" label="Email" required="true"></gold-email-input>
                     <paper-input id="signInPassword" label="Senha" type="password" required="true"></paper-input>
                     <br/>
